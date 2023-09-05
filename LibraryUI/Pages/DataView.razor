@@ -1,0 +1,102 @@
+﻿@page "/DataView"
+@using Library_DataModels.Models;
+@using LibraryUI.Services;
+@inject IFrontEndService _frontEndService;
+@inject IJSRuntime JSRuntime;
+@using BlazorBootstrap
+<div class="row">
+    <div class="col-6">
+        <h4>Books Detail</h4>
+    </div>
+    <div class=" col"  style="align-items:end">
+        <a href="/AddNewBook" type="button" class="btn btn-outline-primary">Add New Book</a>
+    </div>
+</div><br />
+
+<hr />
+<div>
+<Grid TItem="LibraryDb" class="table table-hover table-bordered table-striped" DataProvider="EmployeesDataProvider" AllowFiltering="true" AllowPaging="true" PageSize="5" PageSizeSelectorItems="@val" PageSizeSelectorVisible="true"  AllowSorting="true" Responsive="true">
+    <GridColumn TItem="LibraryDb" HeaderText="BookId" PropertyName="BookId">
+        @context.BookId
+    </GridColumn>
+    <GridColumn TItem="LibraryDb" HeaderText="Book Title" PropertyName="Title" >
+        @context.Title
+    </GridColumn>
+    <GridColumn TItem="LibraryDb" HeaderText="Author" PropertyName="Author">
+        @context.Author
+    </GridColumn>
+    <GridColumn TItem="LibraryDb" HeaderText="Isbn" PropertyName="Isbn">
+        @context.Isbn
+    </GridColumn>
+    <GridColumn TItem="LibraryDb" HeaderText="Description" PropertyName="Discription">
+        @context.Discription
+    </GridColumn>
+    <GridColumn TItem="LibraryDb" HeaderText="Photo" PropertyName="PhotoPath">
+        <td><img src="@convertImagetoDisplay(context.PhotoPath)" width="100px" /></td>
+    </GridColumn>
+    <GridColumn TItem="LibraryDb" HeaderText="Action" PropertyName="Action">
+        <td><a href="@($"IndividualBook/{context.BookId}")" type="button" class="btn btn-outline-info">Edit</a></td>
+    </GridColumn>
+</Grid>
+</div>
+
+
+
+
+@code {
+    private List<LibraryDb> Data = null;
+
+    private List<LibraryDb> allItems = new List<LibraryDb>();
+    private IEnumerable<LibraryDb> DataList ;
+    private int[] val = {5,10,15};
+    private string filterText = " ";
+
+    // Data call 
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        allItems = await _frontEndService.GetLibraryDbs();
+        totalItems = allItems.Count;
+        UpdateDisplayedItems();
+    }
+
+    private async Task<GridDataProviderResult<LibraryDb>> EmployeesDataProvider(GridDataProviderRequest<LibraryDb> request)
+    {
+        DataList = await _frontEndService.GetLibraryDbs();
+        return await Task.FromResult(request.ApplyTo(DataList));
+    }
+
+    //conveert byte image to string image 
+    string convertImagetoDisplay(byte[] image)
+    {
+        if (image != null)
+        {
+            var base64 = Convert.ToBase64String(image);
+            var fs = string.Format("data:image/jpg;base64,{0}", base64);
+            return fs;
+        }
+        return "";
+
+    }
+
+    // page Pagination ----
+
+    private int currentPage = 1;
+    private int totalItems = 0;
+
+
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        await Task.Run(() => { currentPage = newPageNumber; });
+        UpdateDisplayedItems();
+    }
+
+    private int TotalRow = 2;
+    private void UpdateDisplayedItems()
+    {
+        
+        var startIndex = (currentPage - 1) * TotalRow;
+        Data = allItems.Skip(startIndex).Take(TotalRow).ToList();
+
+    }
+}

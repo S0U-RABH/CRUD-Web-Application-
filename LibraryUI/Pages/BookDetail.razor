@@ -1,0 +1,18 @@
+﻿@page "/BookDetail"
+<h3>BookDetail</h3>
+<div>
+    BookId = _Detail.BooId
+    Title
+    Author
+    Discription
+    Isbn
+    Photo
+    
+</div>
+
+
+@code {
+    [Parameter]
+    public Library_DataModels.Models.LibraryDb _Detail { get; set; }
+
+}

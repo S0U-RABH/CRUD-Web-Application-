@@ -1,0 +1,131 @@
+﻿@page "/IndividualBook/{id:int}"
+@using Library_DataModels.Models;
+@using LibraryUI.Services;
+@using System.Text.Json;
+@inject IFrontEndService _frontEndService;
+@inject IJSRuntime JSRuntime;
+@inject HttpClient http
+@inject IWebHostEnvironment HostEnvironment
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
+@using BlazorInputFile
+@inject NavigationManager navigationManager
+@using BlazorBootstrap
+
+
+<h3>IndividualBook</h3><hr />
+@if (Data != null)
+{
+    <EditForm Model="@Data" OnValidSubmit="()=>UpdateBook(Data)">
+        <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="formGroupExampleInput2" class="form-label">Book Title</label>
+            <input type="text"  class="form-control" @bind="Data.Title " id="formGroupExampleInput2" placeholder="Enter Book Title">
+            <ValidationMessage For="@(() => Data.Title)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="formGroupExampleInput2" class="form-label">Book Author</label>
+        <input type="text" class="form-control" @bind="Data.Author " id="formGroupExampleInput2" placeholder="Enter Book Author">
+            <ValidationMessage For="@(() => Data.Author)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="formGroupExampleInput2" class="form-label">Book ISBN</label>
+            <input type="text" class="form-control" @bind="Data.Isbn" id="formGroupExampleInput2" placeholder="Enter Book ISBN">
+            <ValidationMessage For="@(() => Data.Isbn)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="formGroupExampleInput2" class="form-label">Book Description</label>
+            <textarea type="text" class="form-control" @bind="Data.Discription" id="formGroupExampleInput2" placeholder="Enter Book Description" />
+            <ValidationMessage For="@(() => Data.Discription)" />
+    </div>
+
+    <div class="input-group mb-3">
+            <BlazorInputFile.InputFile type="file" class="form-control" OnChange="@HandleFileSelected" id="inputGroupFile02"/>
+            <label class="input-group-text" for="inputGroupFile02">Upload</label>
+    </div><br>
+
+    <div>
+        <img src="@convertImagetoDisplay(Data.PhotoPath)" width="500px" />
+    </div><br/>
+
+    <div class="d-grid gap-2 d-md-block">
+            <input type="submit" class="btn btn-outline-primary btn-lg" value="Save" />
+            <input type="button" class="btn btn-outline-danger btn-lg" value="Delete" @onclick="(() => DeleteBook(id))" />
+    </div>
+    <br />
+
+    </EditForm>
+    
+    
+}
+else
+{
+        <p>Loading Book data...</p>
+}
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private LibraryDb Data = new LibraryDb();
+
+    protected async override Task OnInitializedAsync()
+    {
+        Data = await http.GetFromJsonAsync<LibraryDb>($"https://localhost:44366/api/Library/getLibraryDbs/{id}");
+    }
+
+    public async void UpdateBook(LibraryDb libraryDb)
+    {
+        var editContext = new EditContext(libraryDb);
+        var isValid = editContext.Validate();
+        if (isValid)
+        {
+            var response = await _frontEndService.UpdateBook(libraryDb);
+            if (response != null)
+            {
+                await _frontEndService.GetLibraryDbs();
+                navigationManager.NavigateTo("/DataView");
+                //await Alert("Book Updated Successfully");
+                this.StateHasChanged();
+            }
+
+        }
+    }
+    public async void DeleteBook(int BookID)
+    {
+        var response = await _frontEndService.DeleteBook(id);
+        if (response != null)
+        {
+            
+            await _frontEndService.GetLibraryDbs();
+            navigationManager.NavigateTo("/DataView");
+            //await Alert("Book Updated Successfully");
+            this.StateHasChanged();
+        }
+    }
+    string convertImagetoDisplay(byte[] image)
+    {
+        if (image != null)
+        {
+            var base64 = Convert.ToBase64String(image);
+            var fs = string.Format("data:image/jpg;base64,{0}", base64);
+            return fs;
+        }
+        return "";
+
+    }
+
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            Data.PhotoPath = ms.ToArray();
+        }
+    }
+}

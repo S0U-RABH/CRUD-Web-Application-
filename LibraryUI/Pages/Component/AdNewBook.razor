@@ -1,0 +1,93 @@
+﻿@page "/AddNewBook"
+@using LibraryUI.Services;
+@inject IFrontEndService _frontEndService;
+@inject IJSRuntime JSRuntime;
+@inject IWebHostEnvironment HostEnvironment
+@using BlazorInputFile
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
+@using System.IO
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager navigationManager
+@using BlazorBootstrap
+
+
+<h3>AddNewBook</h3><hr />
+
+<EditForm Model="@_libraryDb" OnValidSubmit="@ValidSubmit"><DataAnnotationsValidator />
+    <div class="form-group">
+        <label for="formGroupExampleInput2">Book Title</label>
+        <input type="text" @bind="_libraryDb.Title" class="form-control" id="formGroupExampleInput2" placeholder="Enter Book Title">
+        <ValidationMessage For="@(() => _libraryDb.Title)" />
+    </div><br />
+
+    <div class="form-group">
+        <label for="formGroupExampleInput">Book Author</label>
+        <input type="text" @bind="_libraryDb.Author" class="form-control" id="formGroupExampleInput" placeholder="Enter Book Author">
+        <ValidationMessage For="@(() => _libraryDb.Author)" />
+    </div><br />
+
+    <div class="form-group">
+        <label for="formGroupExampleInput2">ISBN</label>
+        <input type="text" @bind="_libraryDb.Isbn" class="form-control" id="formGroupExampleInput2" placeholder="Enter Book ISBN">
+        <ValidationMessage For="@(() => _libraryDb.Isbn)" />
+    </div><br />
+
+    <div class="form-group">
+        <label for="exampleFormControlTextarea1">Book Discription</label>
+        <textarea type="text" @bind="_libraryDb.Discription" class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+        <ValidationMessage For="@(() => _libraryDb.Discription)" />
+    </div><br />    
+
+    <div class="input-group mb-3">
+        <BlazorInputFile.InputFile type="file" OnChange="@HandleFileSelected" class="form-control" id="inputGroupFile02" />
+        <label class="input-group-text" for="inputGroupFile02">Upload</label>
+    </div><br>
+
+    <div>
+        <button type="submit" class="btn btn-outline-success">Insert</button>
+    </div><br />
+</EditForm>
+
+
+@code {
+    LibraryDb _libraryDb = new LibraryDb();
+    LibraryDb Data = new LibraryDb();
+
+    public byte[] imageuploaded { get; set; }
+
+    void ValidSubmit()
+    {
+        var editContext = new EditContext(Data);
+        var isValid = editContext.Validate();
+        if (isValid){
+        Data.BookId = 0;
+        Data.Title = _libraryDb.Title;
+        Data.Author = _libraryDb.Author;
+        Data.Isbn = _libraryDb.Isbn;
+        Data.Discription = _libraryDb.Discription;
+        Data.PhotoPath = imageuploaded;
+        var response = _frontEndService.AddNewBook(Data);
+       
+            if (response != null)
+            {
+                navigationManager.NavigateTo("/DataView");
+            }
+        
+        }
+    }
+
+    //Take file input
+    private IBrowserFile selectedFile;
+
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            imageuploaded = ms.ToArray();
+        }
+    }
+}

@@ -1,0 +1,97 @@
+﻿@page "/fetchdata"
+
+<PageTitle>Weather forecast</PageTitle>
+
+@using LibraryUI.Data
+@inject WeatherForecastService ForecastService
+
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody><br>
+        <div>
+            <input type="button" class="btn-lg btn" @onclick="Prevpage" id=" prev" value="Previous" />
+
+            @for(int i = curPage -2; i <= curPage +2; i++){
+                int j = i;
+                if(i>0){
+                    if (i == curPage)
+                    {
+                        <span class="px-2" style="font-weight:bold; cursor:pointer" @onclick="() => ShowPage(j)">@i</span>
+
+                    }
+                    else
+                    {
+                        <span class="px-2" style=" cursor:pointer" @onclick="() => ShowPage(j)">@i</span>
+
+                    }
+                }
+            }
+
+            <input type="button" class="btn-lg btn" @onclick="Nextpage" id="next" value="Next" />
+        </div>
+    </table>
+}
+
+@code {
+    private WeatherForecast[]? forecasts;
+
+    private int curPage = 1;
+
+    protected async Task ShowPage()
+    {
+        forecasts = await ForecastService.GetForecastAsync(DateTime.Now, curPage);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ShowPage();  
+    }
+
+    protected async Task ShowPage( int i)
+    {
+        curPage = i;
+        await ShowPage();
+    }
+
+    protected async Task Nextpage()
+    {
+        curPage++;
+        await ShowPage();
+    }
+
+    protected async Task Prevpage()
+    {
+        if (curPage > 1)
+        {
+            curPage--;
+            await ShowPage();
+        }
+    }
+}

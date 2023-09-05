@@ -1,0 +1,10 @@
+﻿@page "/BookDetail"
+
+<button class="btn btn-primary" onclick="ButtonClick">Click me</button>
+@*<a href="@($"BookDetail/{Detail.BookId}")" class="btn btn-primary"></a>*@
+@code {
+    [Parameter]
+    public Library_DataModels.Models.LibraryDb Detail { get; set; }
+
+    
+}
